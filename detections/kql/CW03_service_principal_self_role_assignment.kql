@@ -1,0 +1,22 @@
+// CW-03 | Service principal adds ITSELF to a directory role
+// Observed: ConnectWise Cloud Management apps assigned themselves directory roles (mostly
+// Exchange Administrator) in ~50 tenants, and Global Administrator in at least one.
+// High-confidence signal: an application should almost never grant itself a role.
+// Table: AuditLogs | ATT&CK: T1098.003 Additional Cloud Roles
+AuditLogs
+| where TimeGenerated > ago(30d)
+| where OperationName in ("Add member to role", "Add eligible member to role")
+| extend InitiatorSpId   = tostring(InitiatedBy.app.servicePrincipalId),
+         InitiatorSpName = tostring(InitiatedBy.app.displayName),
+         TargetId        = tostring(TargetResources[0].id),
+         TargetName      = tostring(TargetResources[0].displayName),
+         TargetType      = tostring(TargetResources[0].type)
+| where isnotempty(InitiatorSpId) and InitiatorSpId == TargetId
+| mv-apply mp = TargetResources[0].modifiedProperties on (
+    where tostring(mp.displayName) == "Role.DisplayName"
+    | extend RoleName = trim(@'"', tostring(mp.newValue))
+  )
+| extend Severity = iff(RoleName in ("Global Administrator", "Privileged Role Administrator",
+                        "Application Administrator", "Cloud Application Administrator",
+                        "Exchange Administrator"), "High", "Medium")
+| project TimeGenerated, InitiatorSpName, InitiatorSpId, RoleName, TargetType, Result, Severity, CorrelationId

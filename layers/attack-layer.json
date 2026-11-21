@@ -1,0 +1,140 @@
+{
+  "name": "Storm-0940 / ConnectWise Cloud Backup M365 compromise (Oct 2026)",
+  "versions": {
+    "attack": "20",
+    "navigator": "5.0.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Red = observed (Microsoft, Huntress, ConnectWise); orange = reported in some tenants; yellow = hunt for it (no confirmed activity). Detection IDs CW-01..CW-07 refer to detections/kql. ATT&CK Enterprise v20.1.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showName": true,
+    "showID": true,
+    "showAggregateScores": false,
+    "countUnscored": false,
+    "expandedSubtechniques": "annotated"
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1588.007",
+      "tactic": "resource-development",
+      "color": "#e60d0d",
+      "comment": "Microsoft: ARTEX agentic AI framework used since at least September 2026.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1588.002",
+      "tactic": "resource-development",
+      "color": "#e60d0d",
+      "comment": "ARTEX open-source penetration-testing framework.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1110.003",
+      "tactic": "credential-access",
+      "color": "#e60d0d",
+      "comment": "10-14 Oct: 327 accounts, >151,000 failures, ~2,900/min peak. Detection: CW-05, CW-02.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1199",
+      "tactic": "initial-access",
+      "color": "#e60d0d",
+      "comment": "Access to customers through the ConnectWise Cloud Backup multi-tenant app they had consented to. Detection: CW-01.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1078.004",
+      "tactic": "initial-access",
+      "color": "#e60d0d",
+      "comment": "Stolen vendor app credential (client assertion) used as a trusted service principal; MFA did not apply. Detection: CW-01, CW-02.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1550.001",
+      "tactic": "lateral-movement",
+      "color": "#e60d0d",
+      "comment": "App-only Microsoft Graph access tokens obtained in customer tenants. Detection: CW-01.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1087.004",
+      "tactic": "discovery",
+      "color": "#e60d0d",
+      "comment": "Microsoft Graph and directory reconnaissance (Microsoft). Graph reads leave little audit trail.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1098.003",
+      "tactic": "privilege-escalation",
+      "color": "#e60d0d",
+      "comment": "Apps assigned themselves directory roles (Exchange Administrator in ~50 tenants; Global Administrator in at least one). Detection: CW-03, CW-06.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1098.001",
+      "tactic": "persistence",
+      "color": "#e60d0d",
+      "comment": "New secrets/certificates added to other apps, including a security vendor's app. Detection: CW-04, CW-06.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1555.006",
+      "tactic": "credential-access",
+      "color": "#fc9f3a",
+      "comment": "Defender for Cloud detected bulk Key Vault secret reads via a compromised multi-tenant app (not confirmed in every tenant). Hunt: CW-07.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1114.002",
+      "tactic": "collection",
+      "color": "#fce93a",
+      "comment": "Hunt: Huntress saw no mail access in the tenant it reviewed; Microsoft advises reviewing mail activity.",
+      "enabled": true,
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1114.003",
+      "tactic": "collection",
+      "color": "#fce93a",
+      "comment": "Hunt: review forwarding and inbox rules (Microsoft, Mitiga).",
+      "enabled": true,
+      "showSubtechniques": true
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffffff",
+      "#e60d0d"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Observed",
+      "color": "#e60d0d"
+    },
+    {
+      "label": "Reported in some tenants",
+      "color": "#fc9f3a"
+    },
+    {
+      "label": "Hunt (not confirmed)",
+      "color": "#fce93a"
+    }
+  ]
+}

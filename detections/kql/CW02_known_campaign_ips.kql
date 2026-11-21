@@ -1,0 +1,18 @@
+// CW-02 | Sign-ins (user or app) from IPs published for the Storm-0940 / ConnectWise campaign
+// Sources: Huntress, ConnectWise advisories (16 and 18 Oct 2026), Mitiga. IPs age quickly: use for
+// retro-hunting from 1 Oct 2026, not as a long-term blocklist.
+// ATT&CK: T1110.003 Password Spraying, T1078.004 Cloud Accounts
+let CampaignIPs = dynamic(["144.172.64.128", "144.172.64.99", "144.172.64.60", "144.172.94.243"]);
+union isfuzzy=true
+    (SigninLogs
+        | where TimeGenerated > datetime(2026-10-01)
+        | where IPAddress in (CampaignIPs)
+        | extend Identity = UserPrincipalName, Kind = "User sign-in"),
+    (AADServicePrincipalSignInLogs
+        | where TimeGenerated > datetime(2026-10-01)
+        | where IPAddress in (CampaignIPs)
+        | extend Identity = ServicePrincipalName, Kind = "Service principal sign-in")
+| summarize FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated), Attempts = count(),
+            Successes = countif(ResultType == "0"), Identities = make_set(Identity, 50)
+    by Kind, IPAddress
+| order by FirstSeen asc

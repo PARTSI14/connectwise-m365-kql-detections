@@ -1,0 +1,24 @@
+// CW-01 | ConnectWise / SkyKick app identity signing in from a public IP
+// Huntress: legitimate traffic from these apps came from Azure private IP space; the attacker
+// signed in from a hosting-provider address (144.172.64.128) and obtained Microsoft Graph tokens.
+// Table: AADServicePrincipalSignInLogs (Entra ID diagnostic settings -> Log Analytics / Sentinel)
+// ATT&CK: T1199 Trusted Relationship, T1078.004 Cloud Accounts, T1550.001 Application Access Token
+// App IDs as published by Mitiga (verify against the ConnectWise advisory before use).
+let ConnectWiseAppIds = dynamic([
+    "506e08f9-6e9a-4da4-942b-a099a03644ae", // ConnectWise Cloud Backup (SkyKick)
+    "2399d300-6fca-4e6a-a686-399fefe75b83", // ConnectWise Cloud Management
+    "24205314-2b89-4e07-a2a4-579e898a5640", // Microsoft Teams integration
+    "b78f6a77-d4e5-46fb-87e5-d1648bd02519", // Exchange Online integration
+    "0de14c77-b9b0-4137-9360-34878a929827", // Microsoft Graph integration
+    "412dcf96-176d-4b3a-a1b0-4981ad66971e", // Partner Center integration
+    "b2b55f5b-7758-4719-8d8f-88ae172e6bdb"  // SharePoint Online integration
+]);
+AADServicePrincipalSignInLogs
+| where TimeGenerated > ago(60d)
+| where AppId in (ConnectWiseAppIds)
+| where ResultType == "0"
+| where not(ipv4_is_private(IPAddress))
+| summarize FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated), SignIns = count(),
+            Resources = make_set(ResourceDisplayName, 10), CredentialTypes = make_set(ClientCredentialType, 5)
+    by AppId, ServicePrincipalName, IPAddress
+| order by FirstSeen asc

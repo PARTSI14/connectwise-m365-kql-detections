@@ -1,0 +1,24 @@
+// CW-06 | Correlation: the same application escalates its own privileges AND plants credentials
+// Mitiga's lesson from the campaign: role self-assignment combined with credential changes on other
+// apps is a much stronger signal than either event alone.
+// Table: AuditLogs | ATT&CK: T1098.003 + T1098.001
+let window = 2h;
+let SelfRoles = AuditLogs
+    | where TimeGenerated > ago(30d)
+    | where OperationName in ("Add member to role", "Add eligible member to role")
+    | extend SpId = tostring(InitiatedBy.app.servicePrincipalId), TargetId = tostring(TargetResources[0].id)
+    | where isnotempty(SpId) and SpId == TargetId
+    | project RoleTime = TimeGenerated, SpId, SpName = tostring(InitiatedBy.app.displayName);
+let Planting = AuditLogs
+    | where TimeGenerated > ago(30d)
+    | where OperationName has "Add service principal credentials"
+         or OperationName has "Certificates and secrets management"
+    | extend SpId = tostring(InitiatedBy.app.servicePrincipalId), TargetId = tostring(TargetResources[0].id)
+    | where isnotempty(SpId) and SpId != TargetId
+    | project CredTime = TimeGenerated, SpId, PlantedOn = tostring(TargetResources[0].displayName);
+SelfRoles
+| join kind=inner Planting on SpId
+| where CredTime between (RoleTime .. (RoleTime + window))
+| summarize FirstRole = min(RoleTime), LastCred = max(CredTime), AppsBackdoored = make_set(PlantedOn, 50)
+    by SpId, SpName
+| extend Severity = "High"
